@@ -23,9 +23,6 @@ class MpesaController extends Controller
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
             CURLOPT_USERPWD => env('MPESA_CONSUMER_KEY').':'.env('MPESA_CONSUMER_SECRET'),
-
-
-
         )
     );
         $response = json_decode(curl_exec($curl));
@@ -34,8 +31,6 @@ class MpesaController extends Controller
         return $response->access_token;
 
     }
-
-   
 
     public function registerURLS(){
 
@@ -55,7 +50,7 @@ class MpesaController extends Controller
 
     }
     public function simulateTransaction(){
-        $response = array(
+        $body = array(
             'CommandID' => 'CustomerPayBillOnline',
             'Amount' => $request->amount,
             'Msisdn' => env('MPESA_TEST_MSISDN'),
@@ -81,7 +76,7 @@ class MpesaController extends Controller
         // curl_setopt($curl, CURLOPT_HTTPHEADER , array('Content-Type: application/json', 'Authorization:Bearer ACCESS_TOKEN'));
         // curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
         // curl_setopt($curl, CURLOPT_POST, true);
-        // curl_setopt($curl, CURLOPT_FIELDS, json_encode($body));
+        // curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($body));
 
 
         $curl = curl_init();
@@ -92,13 +87,9 @@ class MpesaController extends Controller
                 CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'Authorization:Bearer'.$this->getAccessToken()),
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
-                CURLOPT_FIELDS => json_encode($body),
-
+                CURLOPT_POSTFIELDS => json_encode($body),
             )
         );
-
-
-
         $curl_response = curl_exec($curl);
         curl_close($curl);
         return $curl_response;
