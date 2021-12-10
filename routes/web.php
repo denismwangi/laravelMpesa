@@ -18,6 +18,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::post('/get-token', [MpesaController::class, 'getAccessToken']);
-Route::post('/register-url', [MpesaController::class, 'registerURLS']);
-Route::post('/mobile-money/simulate', [MpesaController::class, 'simulateTransaction']);
+// Route::post('/get-token', [MpesaController::class, 'getAccessToken']);
+// Route::post('/register-url', [MpesaController::class, 'registerURLS']);
+// Route::post('/mobile-money/simulate', [MpesaController::class, 'simulateTransaction']);

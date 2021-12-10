@@ -3,16 +3,32 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Hash;
 class MpesaController extends Controller
 {
     //
+    public function lipaNaMpesaPassword()
+    {
+        //timestamp
+        //passkey
+        //businessShortCode
+
+        $timestamp = Carbon::rawParse('now')->format('YmdHms');
+        $passkey = env('MPESA_PASSKEY');
+        $businessShortCode = env('MPESA_SHORTCODE');
+        $mpesaPassword = base64_encode($businessShortCode.$passkey.$timestamp);
+
+        return $mpesaPassword;
+
+    }
 
     public function getAccessToken()
     {
         $url = env('MPESA_ENV') == 0
         ? 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
         : 'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
+        $credentials = env('MPESA_CONSUMER_KEY').':'.env('MPESA_CONSUMER_SECRET');
 
         $curl = curl_init($url);
         curl_setopt_array(
@@ -22,7 +38,7 @@ class MpesaController extends Controller
             CURLOPT_HTTPHEADER => ['Content-Type: application/json; charset=utf8'],
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
-            CURLOPT_USERPWD => env('MPESA_CONSUMER_KEY').':'.env('MPESA_CONSUMER_SECRET'),
+            CURLOPT_USERPWD => $credentials,
         )
     );
         $response = json_decode(curl_exec($curl));
@@ -45,11 +61,18 @@ class MpesaController extends Controller
         ? 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/registerurl'
         : 'https://api.safaricom.co.ke/mpesa/c2b/v1/registerurl';
 
-        $response = $this->makeHttp($url, $body);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json','Authorization:Bearer '.$this->getAccessToken()));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($body));
+
+        $response = curl_exec($curl);
         return $response;
 
     }
-    public function simulateTransaction(){
+    public function simulateTransaction(Request $request){
         $body = array(
             'CommandID' => 'CustomerPayBillOnline',
             'Amount' => $request->amount,
@@ -63,10 +86,60 @@ class MpesaController extends Controller
         ? 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate'
         : 'https://api.safaricom.co.ke/mpesa/c2b/v1/simulate';
 
-        $response = $this->makeHttp($url, $body);
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json','Authorization:Bearer '.$this->getAccessToken()));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($body));
+
+        $response = $response = curl_exec($curl);
         return $response;
 
     }
+
+    public function stkPush(Request $request)
+    {
+        // $user = $request->user;
+        $amount = $request->amount;
+        $phone =  $request->phone;
+        $formatedPhone = substr($phone, 1);//721223344
+        $code = "254";
+        $phoneNumber = $code.$formatedPhone;//254721223344
+
+        $url = env('MPESA_ENV') == 0
+        ? 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
+        : 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest'; 
+
+        $curl_post_data = array(
+            'BusinessShortCode' =>env('MPESA_SHORTCODE'),
+            'Password' => $this->lipaNaMpesaPassword(),
+            'Timestamp' => Carbon::rawParse('now')->format('YmdHms'),
+            'TransactionType' => 'CustomerPayBillOnline',
+            'Amount' => $amount,
+            'PartyA' => $phoneNumber,
+            'PartyB' => env('MPESA_SHORTCODE'),
+            'PhoneNumber' => $phoneNumber, 
+            'CallBackURL' => env('MPESA_TEST_URL').'/api/mobile-money/stk/callbackurl',
+            'AccountReference' => "Mobile Mpney Int",
+            'TransactionDesc' => "lipa Na M-PESA",
+
+        );
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json','Authorization:Bearer '.$this->getAccessToken()));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($curl_post_data));
+
+        $response = curl_exec($curl);
+        return $response;
+
+    }
+
+
+
+
      public function makeHttp($url, $body)
     {
 
@@ -79,12 +152,16 @@ class MpesaController extends Controller
         // curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($body));
 
 
+        $consumer_key = env('MPESA_CONSUMER_KEY');
+        $consumer_secret= env('MPESA_CONSUMER_SECRET');
+        $credentials = base64_encode($consumer_key.":".$consumer_secret);
+
         $curl = curl_init();
         curl_setopt_array(
             $curl, array(
             
                 CURLOPT_URL => $url,
-                CURLOPT_HTTPHEADER => array('Content-Type: application/json', 'Authorization:Bearer'.$this->getAccessToken()),
+                CURLOPT_HTTPHEADER, array("Authorization: Basic ".$credentials,"Content-Type:application/json"),
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => json_encode($body),
@@ -95,4 +172,12 @@ class MpesaController extends Controller
         return $curl_response;
 
     }
+     public function reponseUrl(Request $request)
+     {
+        $response = json_decode($request->getContent());
+
+        $trn = new MpesaTransaction;
+        $trn->response = json_encode($response);
+        $trn->save();
+     }
 }

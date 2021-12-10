@@ -22,4 +22,10 @@ class MpesaResponsesController extends Controller
         Log::info('validation url hit');
         Log::info($request->all());
     }
+
+    public function stkLog(Request $request)
+    {
+        Log::info('stk push endpoint hit');
+        Log::info($request->all());
+    }
 }
