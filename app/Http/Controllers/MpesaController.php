@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use App\Models\MpesaTransaction;
 class MpesaController extends Controller
 {
     //
@@ -176,8 +177,8 @@ class MpesaController extends Controller
      {
         $response = json_decode($request->getContent());
 
-        $trn = new MpesaTransaction;
-        $trn->response = json_encode($response);
-        $trn->save();
+        $transaction = new MpesaTransaction;
+        $transaction->response = json_encode($response);
+        $transaction->save();
      }
 }
