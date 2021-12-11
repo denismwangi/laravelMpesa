@@ -139,40 +139,76 @@ class MpesaController extends Controller
     }
 
 
-
-
-     public function makeHttp($url, $body)
+    public function b2cRequest(Request $request)
     {
+        $amount = $request->amount;
+        $phone =  $request->phone;
+        $remarks = $request->remarks;
+        $occasion = $request->occasion;
+        $formatedPhone = substr($phone, 1);//721223344
+        $code = "254";
+        $phoneNumber = $code.$formatedPhone;//254721223344
 
-        // $url = 'https://sandbox.safaricom.co.ke/mpesa/c2b/v1/paymentrequest';
-        // $curl = curl_init();
-        // curl_setopt($curl, CURLOPT_URL, $url);
-        // curl_setopt($curl, CURLOPT_HTTPHEADER , array('Content-Type: application/json', 'Authorization:Bearer ACCESS_TOKEN'));
-        // curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        // curl_setopt($curl, CURLOPT_POST, true);
-        // curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($body));
+        $url = env('MPESA_ENV') == 0
+        ? 'https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'
+        : 'https://api.safaricom.co.ke/mpesa/b2c/v1/paymentrequest'; 
 
-
-        $consumer_key = env('MPESA_CONSUMER_KEY');
-        $consumer_secret= env('MPESA_CONSUMER_SECRET');
-        $credentials = base64_encode($consumer_key.":".$consumer_secret);
+        $curl_post_data = array(
+            'InitiatorName' => env('MPESA_B2C_INITIATOR'),
+            'SecurityCredential' => env('MPESA_B2C_PASSWORD'),
+            'CommandID' => 'BusinessPayment',
+            'Amount' => $amount,
+            'PartyA' => env('MPESA_SHORTCODE'),
+            'PartyB' => $phoneNumber,
+            'Remarks' => $remarks,
+            'QueueTimeOutURL' => env('MPESA_TEST_URL') . '/api/mobile-money/b2ctimeout',
+            'ResultURL' => env('MPESA_TEST_URL') . '/api/mobile-money/b2c/result',
+            'Occasion' => $occasion
+          );
 
         $curl = curl_init();
-        curl_setopt_array(
-            $curl, array(
-            
-                CURLOPT_URL => $url,
-                CURLOPT_HTTPHEADER, array("Authorization: Basic ".$credentials,"Content-Type:application/json"),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode($body),
-            )
-        );
-        $curl_response = curl_exec($curl);
-        curl_close($curl);
-        return $curl_response;
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json','Authorization:Bearer '.$this->getAccessToken()));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($curl_post_data));
+
+        $response = curl_exec($curl);
+        return $response;
 
     }
+     public function transactionStatus(Request $request)
+    {
+         $url = env('MPESA_ENV') == 0
+        ? 'https://sandbox.safaricom.co.ke/mpesa/transactionstatus/v1/query'
+        : 'https://api.safaricom.co.ke/mpesa/transactionstatus/v1/query'; 
+        
+        
+        $curl_post_data =  array(
+            'Initiator' => env('MPESA_B2C_INITIATOR'),
+            'SecurityCredential' => env('MPESA_B2C_PASSWORD'),
+            'CommandID' => 'TransactionStatusQuery',
+            'TransactionID' => $request->transactionid,
+            'PartyA' => env('MPESA_SHORTCODE'),
+            'IdentifierType' => '4',
+            'ResultURL' => env('MPESA_TEST_URL').'/api/mobile-money/transaction/response',
+            'QueueTimeOutURL' => env('MPESA_TEST_URL').'/api/mobile-money/transaction-status/timeout_url',
+            'Remarks' => 'CheckTransaction',
+            'Occasion' => 'VerifyTransaction'
+          );
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json','Authorization:Bearer '.$this->getAccessToken()));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($curl_post_data));
+
+        $response = curl_exec($curl);
+        return $response;
+
+    }
+
      public function reponseUrl(Request $request)
      {
         $response = json_decode($request->getContent());
@@ -181,4 +217,65 @@ class MpesaController extends Controller
         $transaction->response = json_encode($response);
         $transaction->save();
      }
+
+     public function reverseTransaction(Request $request){
+
+        $url = env('MPESA_ENV') == 0
+        ? 'https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request'
+        : 'https://api.safaricom.co.ke/mpesa/reversal/v1/request'; 
+
+        $curl_post_data = array(
+            'Initiator' => env('MPESA_B2C_INITIATOR'),
+            'SecurityCredential' => env('MPESA_B2C_PASSWORD'),
+            'CommandID' => 'TransactionReversal',
+            'TransactionID' => $request->transactionid,
+            'Amount' => $request->amount,
+            'ReceiverParty' => env('MPESA_SHORTCODE'),
+            'RecieverIdentifierType' => '11',
+            'ResultURL' => env('MPESA_TEST_URL') . '/api/reversal/result',
+            'QueueTimeOutURL' => env('MPESA_TEST_URL') . '/api/reversal/timeout_url',
+            'Remarks' => 'ReversalRequest',
+            'Occasion' => 'ErroneousPayment'
+          );
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json','Authorization:Bearer '.$this->getAccessToken()));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($curl_post_data));
+
+        $response = curl_exec($curl);
+        return $response;
+
+    }
+    public function checkBalance(Request $request){
+
+        $url = env('MPESA_ENV') == 0
+        ? 'https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query'
+        : 'https://api.safaricom.co.ke/mpesa/accountbalance/v1/query'; 
+
+        $curl_post_data = array(
+            'Initiator' => env('MPESA_B2C_INITIATOR'),
+            'SecurityCredential' => env('MPESA_B2C_PASSWORD'),
+            'CommandID' => 'AccountBalance',
+            'IdentifierType' => '4',
+            'PartyA' => env('MPESA_SHORTCODE'),
+            'ResultURL' => env('MPESA_TEST_URL') . '/api/mobile-money/balance/result',
+            'QueueTimeOutURL' => env('MPESA_TEST_URL') . '/api/balance/timeout_url',
+            'Remarks' => 'BalanceCheck',
+           
+          );
+
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type:application/json','Authorization:Bearer '.$this->getAccessToken()));
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($curl_post_data));
+
+        $response = curl_exec($curl);
+        return $response;
+
+    }
 }
