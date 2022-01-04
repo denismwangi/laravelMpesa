@@ -2,20 +2,23 @@
 
 ### Premium Partners
 
-- create the env file 
-- ```env
-        MPESA_CONSUMER_KEY=
-        MPESA_CONSUMER_SECRET=
-        MPESA_SHORTCODE=
-        MPESA_STK_SHORTCODE=
-        MPESA_ENV=0
-        MPESA_TEST_MSISDN=
-        MPESA_TEST_URL=
-        MPESA_PASSKEY=
-        MPESA_B2C_PASSWORD=
-        MPESA_B2C_INITIATOR=
 
-- ```
+-This project implement the various Mpesa APIs. It is based on the REST API whose documentation is available on https://developer.safaricom.co.ke.
+- Configuration
+At your project root, create a .env file and in it set the consumer key and consumer secret as follows
+```env
+    MPESA_CONSUMER_KEY=
+    MPESA_CONSUMER_SECRET=
+    MPESA_SHORTCODE=
+    MPESA_STK_SHORTCODE=
+    MPESA_ENV=0
+    MPESA_TEST_MSISDN=
+    MPESA_TEST_URL=
+    MPESA_PASSKEY=
+    MPESA_B2C_PASSWORD=
+    MPESA_B2C_INITIATOR=
+
+```
 
 
 ## Contributing
