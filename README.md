@@ -22,25 +22,22 @@
 
 
 ### usage
-- clone the repo
-- generate the key
-```shell
-    php artisan key:generate
-```
-```shell
-   composer install
-```
+##### Composer Install
+cd into the project directory via terminal and run the following  command to install composer packages.
+###### `composer install`
+##### Generate Key
+then run the following command to generate fresh key.
+###### `php artisan key:generate`
 
-- Confirmation and validation urls, Account Balance Request,Transaction Status Request ,C2B Payment Request,B2C Payment Request,STK Push Simulation,STK Push Status Query and Callbacks
+##### Confirmation and validation urls, Account Balance Request,Transaction Status Request ,C2B Payment Request,B2C Payment Request,STK Push Simulation,STK Push Status Query and Callbacks
+
+ ## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 ## Code of Conduct
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Please make sure to update tests as appropriate
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
