@@ -22,6 +22,14 @@
 
 
 ### usage
+- clone the repo
+- generate the key
+```shell
+    php artisan key:generate
+```
+```shell
+   composer install
+```
 
 - Confirmation and validation urls, Account Balance Request,Transaction Status Request ,C2B Payment Request,B2C Payment Request,STK Push Simulation,STK Push Status Query and Callbacks
 
