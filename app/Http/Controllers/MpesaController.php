@@ -122,7 +122,7 @@ class MpesaController extends Controller
             'PartyB' => env('MPESA_SHORTCODE'),
             'PhoneNumber' => $phoneNumber, 
             'CallBackURL' => env('MPESA_TEST_URL').'/api/mobile-money/stk/callbackurl',
-            'AccountReference' => "Mobile Mpney Int",
+            'AccountReference' => "Mobile Money Int",
             'TransactionDesc' => "lipa Na M-PESA",
 
         );
